@@ -1,78 +1,89 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1,minimum-scale=1,maximum-scale=1,user-scalable=no" />
-    <title>WebAR World Tracker</title>
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        background: #000;
-        overflow: hidden;
-        height: 100%;
-      }
-      #unity-canvas {
-        width: 100%;
-        height: 100%;
-        touch-action: none;
-      }
-      #loading-bar {
-        position: absolute;
-        width: 100%;
-        height: 4px;
-        background: #444;
-        top: 0;
-        left: 0;
-      }
-      #progress-bar {
-        height: 100%;
-        width: 0%;
-        background: #4af;
-      }
-    </style>
-  </head>
-  <body>
-    <canvas id="unity-canvas"></canvas>
-    <div id="loading-bar"><div id="progress-bar"></div></div>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WebAR World Tracker</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      overflow: hidden;
+      height: 100%;
+    }
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      touch-action: none;
+      background-color: transparent;
+    }
+    #loading-bar {
+      position: absolute;
+      width: 100%;
+      height: 4px;
+      background: #444;
+      top: 0;
+      left: 0;
+      z-index: 10;
+    }
+    #progress-bar {
+      height: 100%;
+      width: 0%;
+      background: #4af;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="unity-canvas"></canvas>
+  <div id="loading-bar"><div id="progress-bar"></div></div>
 
-    <script src="Build/UnityLoader.js"></script>
-    <script>
-      var canvas = document.querySelector("#unity-canvas");
-      var loadingBar = document.getElementById("loading-bar");
-      var progressBar = document.getElementById("progress-bar");
-
-      var unityInstance = UnityLoader.instantiate("unity-canvas", "Build/Build.json", {
-        onProgress: function (instance, progress) {
-          progressBar.style.width = (progress * 100) + "%";
-          if (progress === 1) {
-            loadingBar.style.display = "none";
-          }
-        },
-		WebGLContextAttributes: {
-		alpha: true,
-		preserveDrawingBuffer: true
-		}
+  <!-- Script kamera -->
+  <script>
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+      .then(function(stream) {
+        const video = document.createElement("video");
+        video.srcObject = stream;
+        video.play();
+        video.style.position = "absolute";
+        video.style.top = "0";
+        video.style.left = "0";
+        video.style.width = "100%";
+        video.style.height = "100%";
+        video.style.objectFit = "cover";
+        video.style.zIndex = "-1"; // Di belakang canvas
+        document.body.appendChild(video);
+      })
+      .catch(function(err) {
+        console.error("Camera access failed: ", err);
       });
+  </script>
 
-      // Camera akses untuk WebAR
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(function(stream) {
-          const video = document.createElement("video");
-          video.srcObject = stream;
-          video.play();
-          video.style.position = "absolute";
-          video.style.top = "0";
-          video.style.left = "0";
-          video.style.width = "100%";
-          video.style.height = "100%";
-          video.style.objectFit = "cover";
-          video.style.zIndex = "-1";
-          document.body.appendChild(video);
-        })
-        .catch(function(err) {
-          console.error("Camera access failed: ", err);
-        });
-    </script>
-  </body>
+  <!-- Unity WebGL -->
+  <script src="Build/Build.loader.js"></script>
+  <script>
+    const canvas = document.querySelector("#unity-canvas");
+    const loadingBar = document.getElementById("loading-bar");
+    const progressBar = document.getElementById("progress-bar");
+
+    createUnityInstance(canvas, {
+      dataUrl: "Build/Build.data",
+      frameworkUrl: "Build/Build.framework.js",
+      codeUrl: "Build/Build.wasm",
+      streamingAssetsUrl: "StreamingAssets",
+      companyName: "YourCompany",
+      productName: "YourProduct",
+      productVersion: "1.0",
+      WebGLContextAttributes: {
+        alpha: true,
+        preserveDrawingBuffer: true
+      }
+    }, (progress) => {
+      progressBar.style.width = (progress * 100) + "%";
+      if (progress === 1) {
+        loadingBar.style.display = "none";
+      }
+    });
+  </script>
+</body>
 </html>
